@@ -34,15 +34,19 @@ class MSState(object):
     quality = None
 
     def __lt__(self, other):
-        return self.quality < other.quality
+        return self.get_quality() < other.get_quality()
 
     #somehow caching this property is slower...
     def calculate_quality(self):
         global g_quality_calc_cnt
         g_quality_calc_cnt += 1
         self.quality = len(self.data) - len(self.find_all('.'))
+        return self.quality
     # def quality(self):
     #     return len(self.data) - len(self.find_all('.'))
+
+    def get_quality(self):
+        return self.quality or self.calculate_quality()
 
     def copy(self):
         #not copying the moves
@@ -62,7 +66,7 @@ class MSState(object):
         assert self.scale == state.scale
         assert state.scale ** 2 == len(state.data)
         self.data = deepcopy(state.data)
-        self.calculate_quality()
+        self.quality = None
 
     def update_cell(self, crd, value):
         assert all([self.is_crd_valid for _crd in crd])
@@ -70,13 +74,13 @@ class MSState(object):
         row, col = crd
         offset = row * self.scale + col
         self.data[offset] = value
-        self.calculate_quality()
+        self.quality = None
 
     def __init__(self, scale, data):
         assert scale ** 2 == len(data)
         self.scale = scale
         self.data = list(data)
-        self.calculate_quality()
+        self.quality = None
 
     def peek(self, crd):
         row, col = crd
@@ -180,7 +184,7 @@ def solve_case(state):
         #indeed, case 41 is 720 sec this way..
         best_move = possible_moves[0]
         for _move in possible_moves: #this way case 41(1) is 250 sec, 42 is 138
-            if _move.quality > best_move.quality:
+            if _move.get_quality() > best_move.get_quality():
                 best_move = _move
         state = best_move
         moves_made += 1
