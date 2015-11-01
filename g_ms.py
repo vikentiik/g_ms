@@ -4,7 +4,7 @@ import logbook
 from timeit import default_timer as timer
 logger = logbook.Logger(__file__)
 from os import path
-logger.handlers.append(logbook.FileHandler('log/' + path.split(__file__)[1]  + '.log', bubble=True))
+logger.handlers.append(logbook.FileHandler('log/' + path.split(__file__)[1] + '.log', bubble=True))
 
 
 class BoomException(Exception):
@@ -28,6 +28,7 @@ def move(crd, state):
 
 
 g_quality_calc_cnt = 0
+g_find_cnt = 0
 class MSState(object):
 
     scale, data = None, None
@@ -36,6 +37,7 @@ class MSState(object):
     def __lt__(self, other):
         return self.get_quality() < other.get_quality()
 
+    #caching quality is about 30% speedup on 20x20 cases
     def calculate_quality(self):
         global g_quality_calc_cnt
         g_quality_calc_cnt += 1
@@ -43,7 +45,6 @@ class MSState(object):
         return self.quality
     # def quality(self):
     #     return len(self.data) - len(self.find_all('.'))
-
     def get_quality(self):
         return self.quality or self.calculate_quality()
 
@@ -81,6 +82,12 @@ class MSState(object):
         self.data = list(data)
         self.quality = None
 
+    def scan(self):
+        index = 0
+        for elm in self.data:
+            yield index, elm
+            index += 1
+
     def peek(self, crd):
         row, col = crd
         offset = row * self.scale + col
@@ -100,6 +107,13 @@ class MSState(object):
     #         for neig in neig_crds:
     #             if self.peek(neig) == '.': #can't be a '*', i just discovered zero of those around
     #                 self.discover(neig)
+
+    #I do a bunch of real moves and choose one by calculating quality for each.
+    #(!not really) Instead, I can make dummy moves than only count how much would be discovered,
+    #but do not do update_cell's.
+    #What does that buy?
+    #Fucking nothing, I can't run a discovery without updating the cells for the recursive
+    #discoveries to operate properly..
     def discover(self, start_crd):
         queue = list()
         queue.append(start_crd)
@@ -126,14 +140,18 @@ class MSState(object):
                             result.append((c_row, c_col))
         return result
 
+    #this is 7.4 s/case against old 9.3 s/case or something like that
     def find_all(self, value):
-        result = []
-        for row in range(0, self.scale):
-            for col in range(0, self.scale):
-                crd = (row, col)
-                if self.peek(crd) == value:
-                    result.append(crd)
-        return result
+        global g_find_cnt
+        g_find_cnt += 1
+        return [(idx // self.scale, idx % self.scale) for idx, elm in self.scan() if elm == value]
+        # result = []
+        # for row in range(0, self.scale):
+        #     for col in range(0, self.scale):
+        #         crd = (row, col)
+        #         if self.peek(crd) == value:
+        #             result.append(crd)
+        # return result
 
     def is_solved(self):
         return len(list(self.possible_moves())) == 0
