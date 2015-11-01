@@ -4,7 +4,7 @@ import logbook
 from timeit import default_timer as timer
 logger = logbook.Logger(__file__)
 from os import path
-logger.handlers.append(logbook.FileHandler('log/' + path.split(__file__)[1]  + '.log', bubble=True))
+logger.handlers.append(logbook.FileHandler('log/' + path.split(__file__)[1] + '.log', bubble=True))
 
 
 class BoomException(Exception):
@@ -36,7 +36,7 @@ class MSState(object):
     def __lt__(self, other):
         return self.get_quality() < other.get_quality()
 
-    #somehow caching this property is slower...
+    #caching quality is about 30% speedup on 20x20 cases
     def calculate_quality(self):
         global g_quality_calc_cnt
         g_quality_calc_cnt += 1
@@ -44,7 +44,6 @@ class MSState(object):
         return self.quality
     # def quality(self):
     #     return len(self.data) - len(self.find_all('.'))
-
     def get_quality(self):
         return self.quality or self.calculate_quality()
 
@@ -178,13 +177,13 @@ def solve_case(state):
             logger.info('solve_case: {}, scale: {}'.format(timer() - start, state.scale))
             return moves_made
         possible_moves = [move(crd, state) for crd in state.possible_moves()]
-        #possible_moves.sort(reverse = True)#let's see how much time I wasted sorting random shit
+        possible_moves.sort(reverse = True)#let's see how much time I wasted sorting random shit
         #..it's.. worse? hard to tell... let it run for 3 hours as i did last time.
         #on large sets this sort has got to make a difference
         #indeed, case 41 is 720 sec this way..
         best_move = possible_moves[0]
-        for _move in possible_moves: #this way case 41(1) is 250 sec, 42 is 138
-            if _move.get_quality() > best_move.get_quality():
-                best_move = _move
+        # for _move in possible_moves: #this way case 41(1) is 250 sec, 42 is 138
+        #     if _move.get_quality() > best_move.get_quality():
+        #         best_move = _move
         state = best_move
         moves_made += 1
