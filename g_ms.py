@@ -36,7 +36,6 @@ class MSState(object):
     def __lt__(self, other):
         return self.get_quality() < other.get_quality()
 
-    #somehow caching this property is slower...
     def calculate_quality(self):
         global g_quality_calc_cnt
         g_quality_calc_cnt += 1
