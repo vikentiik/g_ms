@@ -1,5 +1,5 @@
 from timeit import default_timer as timer
-from g_ms import logger, solve_case, parse_cases, g_quality_calc_cnt, g_find_cnt
+from g_ms import logger, solve_case, parse_cases
 
 with open('timing-sample.in') as input:
     case_cnt = 1
@@ -13,5 +13,6 @@ with open('timing-sample.in') as input:
             logger.info(output_line.strip())
     logger.info('total time: ' + str(timer() - total_start))
     logger.info('avg time: ' + str((timer() - total_start) / repeat))
+    from g_ms import g_quality_calc_cnt, g_find_cnt
     logger.info('quality calculations: ' + str(g_quality_calc_cnt))
     logger.info('find_all''s: ' + str(g_find_cnt))
